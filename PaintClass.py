@@ -7,6 +7,14 @@ from tkinter import messagebox
 from StatusesOptions import *
 from Top import Top
 from ComputePoints import *
+# todo откат действия назад
+
+def GenerateGraph():
+    # todo генерировать фигуру здесь
+    # return {Top(0, 100, 100): [Top(1, 150, 150), Top(2, 200, 150), Top(3, 500, 500)], Top(1, 150, 150): None,
+    #         Top(2, 200, 150): None,
+    #         Top(3, 500, 500): None}, [[1, 0, 1, 1], [1, 0, 0, 1]]
+    return generate_random_graph()
 
 
 def DrawCircle(canvas, point, number, color=TOP_COLOR, color_outline=TOP_OUTLINE):
@@ -19,21 +27,44 @@ def DrawCircle(canvas, point, number, color=TOP_COLOR, color_outline=TOP_OUTLINE
     canvas.create_text(point.x, point.y, text=number)
 
 
+def ClearFrame(frame):
+    """Очищает выбранную рамку"""
+    for widgets in frame.winfo_children():
+        widgets.destroy()
+
+
 class Paint(Frame):
     def __init__(self, parent):
         Frame.__init__(self, parent)
         self.parent = parent
-        self.font = tkinter.font.Font(family=STANDARD_FAMILY_FONT, size=STANDARD_SIZE_TEXT)
-        self.frameActions = Frame(self)
-        self.frameOptionsGame = Frame(self)
-        self.frameFoundPaints = Frame(self)
+        self.font = tkinter.font.Font(family=STANDARD_FAMILY_FONT, size=STANDARD_SIZE)
+        self.fontStep = tkinter.font.Font(family=STEPS_FAMILY_FONT, size=STEPS_FAMILY_SIZE)
+        self.frameLeft = Frame(self)
+        self.frameRight = Frame(self)
+        self.frameMainWidgets = Frame(self.frameLeft)
+        self.frameMethodCreateGraph = Frame(self.frameLeft)
+        self.frameCreateBySelf = Frame(self.frameMethodCreateGraph)
+        self.frameGenerateGraph = Frame(self.frameMethodCreateGraph)
+        self.frameOptionsGame = Frame(self.frameRight)
+        self.frameStepByStep = LabelFrame(self.frameRight, text="Шаги для раскраски")
+        self.frameCanvas = Frame(self.frameLeft)
+        self.frameFoundPaints = Frame(self.frameRight)
         self.__initText()
         self.__initBoxes()
         self.__initButtons()
         self.__initCanvas()
         self.__initBinds()
+        self.frameCanvas.pack(side=BOTTOM)
+        self.frameOptionsGame.pack(pady=STANDARD_PADY_FRAMES)
+        self.frameMethodCreateGraph.pack(side=BOTTOM)
+        self.frameMainWidgets.pack(side=TOP)
+        self.frameLeft.pack(side=LEFT)
+        self.frameRight.pack(side=RIGHT, anchor=N)
         self.pack(fill=BOTH, expand=1)
 
+        self.topsPainted = []
+        self.tops2PaintIndex = []
+        self.currentIndexColoring = None
         self.numberTop = 0
         self.tops = {}
         self.action = None
@@ -42,57 +73,64 @@ class Paint(Frame):
 
     def __initText(self):
         """Инициализация текста"""
-        Label(self, text="Действия", font=self.font).grid(row=0, column=0, padx=STANDARD_PADX, pady=STANDARD_PADY)
+        Label(self.frameMainWidgets, text="Метод создания фигуры", font=self.font).pack(side=LEFT)
+        Label(self.frameOptionsGame, text="Режим игры", font=self.font).pack()
 
-        Label(self, text="Режим игры", font=self.font).grid(row=1, column=0, padx=STANDARD_PADX, pady=STANDARD_PADY)
+        Label(self.frameOptionsGame, text="Параметры отображения", font=self.font).pack()
 
-        self.labelDemonstrate = Label(self, text="Параметры отображения", font=self.font)
-
-        self.labelFoundedPaints = Label(self, text="Найденные раскраски", font=self.font)
+        Label(self.frameFoundPaints, text="Найденные раскраски", font=self.font).pack()
 
     def __initBoxes(self):
         """Инициализация боксов с текстом"""
-        self.boxGameRegime = Combobox(self, state='readonly', values=GAME_REGIME, font=self.font)
-        self.boxGameRegime.grid(row=1, column=1, padx=STANDARD_PADX, pady=STANDARD_PADY)
 
-        self.boxDemonstrateRegime = Combobox(self, state='readonly', values=DEMONSTRATE_REGIME, font=self.font)
+        self.boxCreateRegime = Combobox(self.frameMainWidgets, state='readonly', values=GRAPH_CONSTRUCTOR_REGIME,
+                                        font=self.font)
+        self.boxCreateRegime.pack(side=LEFT)
 
-        self.boxFoundPaints = Combobox(self, state='readonly', font=self.font)
+        self.boxGameRegime = Combobox(self.frameOptionsGame, state='readonly', values=GAME_REGIME, font=self.font)
+        self.boxGameRegime.pack()
+
+        self.boxTypeGameRegime = Combobox(self.frameOptionsGame, state='disabled',
+                                          font=self.font)
+
+        self.boxFoundPaints = Combobox(self.frameFoundPaints, state='readonly', font=self.font)
+        self.boxFoundPaints.pack()
 
     def __initCanvas(self):
         """Инициализирования поля для рисования"""
         self.parent.title("Раскраска графов")
 
-        self.canvas = Canvas(self, bg='white', height=CANVAS_HEIGHT, width=CANVAS_WIDTH)
-        self.canvas.grid(row=2, column=0, columnspan=5, sticky=E + W + S + N)
-        self.canvas.bind("<Button-1>", self.CanvasClick)
+        self.canvas = Canvas(self.frameCanvas, bg='white', height=CANVAS_HEIGHT, width=CANVAS_WIDTH)
+        self.canvas.pack(side=BOTTOM)
 
     def __initButtons(self):
         """Инициализирования кнопок"""
-        self.buttonAddTop = Button(self, text="Добавить вершину", command=self.__actionAddTop, font=self.font,
-                                   width=STANDARD_BUTTON_WIDTH)
-        self.buttonAddTop.grid(row=0, column=1, padx=STANDARD_PADX, pady=STANDARD_PADY)
+        Button(self.frameCreateBySelf, text="Добавить вершину", command=self.__actionAddTop, font=self.font,
+               width=STANDARD_BUTTON_WIDTH).pack(side=LEFT)
 
-        self.buttonConnectTops = Button(self, text="Соединить вершины", command=self.__actionConnectTops,
-                                        font=self.font, width=STANDARD_BUTTON_WIDTH)
-        self.buttonConnectTops.grid(row=0, column=2, padx=STANDARD_PADX, pady=STANDARD_PADY)
+        Button(self.frameCreateBySelf, text="Соединить вершины", command=self.__actionConnectTops,
+               font=self.font, width=STANDARD_BUTTON_WIDTH).pack(side=LEFT)
 
-        self.buttonPaintTops = Button(self, text="Найти раскраски", command=self.__actionFindPaintings, font=self.font,
-                                      width=STANDARD_BUTTON_WIDTH)
-        self.buttonPaintTops.grid(row=0, column=3, padx=STANDARD_PADX, pady=STANDARD_PADY)
+        Button(self.frameCreateBySelf, text="Найти раскраски", command=self.__findColorings, font=self.font,
+               width=STANDARD_BUTTON_WIDTH).pack(side=LEFT)
 
-        self.buttonDeleteAll = Button(self, text="Очистить лист", command=self.__actionClearCanvas,
-                                      font=self.font,
-                                      width=STANDARD_BUTTON_WIDTH)
-        self.buttonDeleteAll.grid(row=0, column=4, padx=STANDARD_PADX, pady=STANDARD_PADY)
+        Button(self.frameMainWidgets, text="Очистить лист", command=self.__actionClearCanvas,
+               font=self.font,
+               width=STANDARD_BUTTON_WIDTH).pack(side=LEFT)
 
-        self.buttonPaintTops = Button(self, text="Раскрасить вершины", command=self.__actionPaintTops, font=self.font,
-                                      width=STANDARD_BUTTON_WIDTH)
+        Button(self.frameFoundPaints, text="Получить раскраску", command=self.__actionGetPaint, font=self.font,
+               width=STANDARD_BUTTON_WIDTH).pack()
+
+        Button(self.frameGenerateGraph, text="Сгенерировать фигуру", command=self.__generateGraph,
+               font=self.font).pack()
 
     def __initBinds(self):
         """Устанавливает бинды на виджеты"""
         self.boxGameRegime.bind("<<ComboboxSelected>>", self.__callbackBoxGameRegime)
-        self.boxDemonstrateRegime.bind("<<ComboboxSelected>>", self.__callbackBoxDemonstrateRegime)
+        self.boxTypeGameRegime.bind("<<ComboboxSelected>>", self.__callbackBoxTypeGameRegime)
+        self.boxFoundPaints.bind("<<ComboboxSelected>>", self.__callbackBoxFoundPaints)
+        self.boxCreateRegime.bind("<<ComboboxSelected>>", self.__callbackBoxCreateRegime)
+        self.canvas.bind("<Button-1>", self.CanvasClick)
 
     def CanvasClick(self, position):
         """Взаимодействия с полотном"""
@@ -113,10 +151,10 @@ class Paint(Frame):
             self.__findMatch(save_position_x, save_position_y)
             if self.firstTopClick is None and self.foundElement is not None:
                 self.firstTopClick = self.foundElement
-                self.__makeTopLight()
+                self.__changeColorTop(TOP_COLOR_CHOICE)
 
             elif self.secondTopClick is None and self.foundElement is not None:
-                self.__makeTopLight("off")
+                self.__changeColorTop()
                 self.secondTopClick = self.foundElement
                 self.tops[self.firstTopClick].append(self.secondTopClick)
                 self.tops[self.secondTopClick].append(self.firstTopClick)
@@ -124,10 +162,49 @@ class Paint(Frame):
                 self.secondTopClick = None
                 self.firstTopClick = None
 
+        elif self.action == Status.StepPainted:
+            self.__findMatch(save_position_x, save_position_y)
+            if self.foundElement.index in self.tops2PaintIndex:
+                for number, label in enumerate(self.frameStepByStep.winfo_children()):
+                    label_text = label.cget('text')
+                    if label_text[-1] == str(self.foundElement.index):
+                        Label(self.frameStepByStep.winfo_children()[number]).config(
+                            text=label_text + u'\u2713')
+
+                self.__changeColorTop(TOP_COLOR_PAINT)
+                if self.foundElement.index not in self.topsPainted:
+                    self.topsPainted.append(self.foundElement.index)
+                if len(self.topsPainted) == len(self.tops2PaintIndex):
+                    messagebox.showinfo("", message="Фигура раскрашена!")
+
+        elif self.action == Status.TrainPainted:
+            self.__findMatch(save_position_x, save_position_y)
+            if self.foundElement is None:
+                return
+            if self.currentIndexColoring is None:
+                self.__findCorrectColoring()
+            if self.foundElement.index in self.tops2PaintIndex:
+                self.__changeColorTop(TOP_COLOR_PAINT)
+                if self.foundElement.index not in self.topsPainted:
+                    self.topsPainted.append(self.foundElement.index)
+            else:
+                if self.boxGameRegime.get() == "Тренажер":
+                    messagebox.showerror("Ошибка", "В данной раскраске вершина не должна быть закрашенной")
+            if self.currentIndexColoring is None:
+                for number, coloring in enumerate(self.typeColorings):
+                    tops2coloring = [i for i in range(len(coloring)) if coloring[i] == 1]
+                    if tops2coloring == self.topsPainted:
+                        self.__coloringFinished()
+                        return
+            if len(self.topsPainted) == len(self.tops2PaintIndex):
+                self.__coloringFinished()
+
     # Смена действия
     ################################
     def __actionAddTop(self):
         self.__normalizeTops()
+        self.__clearFrameStepByStep()
+        self.frameFoundPaints.pack_forget()
         self.action = Status.AddTop
 
     def __actionConnectTops(self):
@@ -136,29 +213,33 @@ class Paint(Frame):
         self.secondTopClick = None
         self.action = Status.ConnectTops
 
-    def __actionFindPaintings(self):
-        """Нахождения значения раскрасок"""
-        self.typeColorings = process(self.tops)
-        self.labelFoundedPaints.grid(row=0, column=7, padx=STANDARD_PADX, pady=STANDARD_PADY)
-        self.boxFoundPaints.grid(row=1, column=7, padx=STANDARD_PADX, pady=STANDARD_PADY)
-        print(self.typeColorings)
+        self.__clearFrameStepByStep()
+        self.frameFoundPaints.pack_forget()
 
-        self.boxFoundPaints['values'] = ["Раскраска №" + str(i) for i in range(len(self.typeColorings))]
-        self.boxFoundPaints.current(0)
-
-    def __actionPaintTops(self):
+    def __actionGetPaint(self):
         """Раскрашиваем вершины"""
         number_paint = self.boxFoundPaints.current()
-        if self.boxDemonstrateRegime.get() == "Мгновенно" or self.boxDemonstrateRegime.get() == "Анимировано":
-            for number_top, value in enumerate(self.typeColorings[number_paint]):
-                if value == 1:
+        self.__clearFrameStepByStep()
+        self.tops2PaintIndex = []
+        self.labelsStepByStep = {}
+        self.topsPainted = []
+        self.frameStepByStep.pack(pady=STANDARD_PADY_FRAMES)
+        for number_top, value in enumerate(self.typeColorings[number_paint]):
+            if value == 1:
+                self.tops2PaintIndex.append(number_top)
+                self.__initStep(number_top)
+                if self.boxTypeGameRegime.get() != "Раскрашу сам":
                     DrawCircle(self.canvas, list(self.tops.keys())[number_top], number_top, color=TOP_COLOR_PAINT)
-                    if self.boxDemonstrateRegime.get() == "Анимировано":
+                    if self.boxTypeGameRegime.get() == "Анимировано":
                         time.sleep(ANIMATE_PAUSE)
                         self.update()
-                else:
-                    DrawCircle(self.canvas, list(self.tops.keys())[number_top], number_top, color=TOP_COLOR)
-        self.action = Status.Nothing
+            else:
+                DrawCircle(self.canvas, list(self.tops.keys())[number_top], number_top, color=TOP_COLOR)
+
+        if self.boxTypeGameRegime.get() == "Раскрашу сам":
+            self.action = Status.StepPainted
+        else:
+            self.action = Status.Nothing
 
     def __actionClearCanvas(self):
         self.action = Status.Nothing
@@ -166,14 +247,90 @@ class Paint(Frame):
         self.numberTop = 0
         self.canvas.delete("all")
 
+        self.__clearFrameStepByStep()
+        self.frameFoundPaints.pack_forget()
+
     ##################################
 
-    def __makeTopLight(self, status="on"):
-        """Выделяет выбранную вершину"""
-        if status == "on":
-            DrawCircle(self.canvas, self.firstTopClick, self.firstTopClick.index, color=TOP_COLOR_CHOICE)
+    def __coloringFinished(self):
+        """Уведомляет пользователя, о том что он правильно раскрасил фигуру"""
+        messagebox.showinfo("", message="Фигура раскрашена!")
+        self.currentIndexColoring = None
+
+    def __findCorrectColoring(self):
+        """Используется в режим тренажре или игра.
+         Ищет подходящую раскарску под выбор пользователя"""
+        index = self.foundElement.index
+        copy_type_coloring = list(self.typeColorings)
+        for number, coloring in enumerate(self.typeColorings):
+            if coloring[index] == 0:
+                copy_type_coloring[number] = None
+
+        copy_type_coloring = [coloring for coloring in copy_type_coloring if coloring is not None]
+        if len(copy_type_coloring) == 0:
+            return
+
+        if len(self.typeColorings) > 1:
+            self.currentIndexColoring = None
+            self.tops2PaintIndex = [i for i in range(len(self.typeColorings[0])) if
+                                    self.typeColorings[0][i] == 1]
         else:
-            DrawCircle(self.canvas, self.firstTopClick, self.firstTopClick.index)
+            self.currentIndexColoring = 0
+            self.tops2PaintIndex = [i for i in range(len(self.typeColorings[self.currentIndexColoring])) if
+                                    self.typeColorings[self.currentIndexColoring][i] == 1]
+        self.topsPainted.append(self.foundElement.index)
+
+    def __findColorings(self):
+        """Нахождения значения раскрасок"""
+        if not self.__checkGameRegime():
+            return
+
+        self.typeColorings = solve(self.tops)
+        self.frameFoundPaints.pack(pady=STANDARD_PADY_FRAMES)
+        print(self.typeColorings)
+        self.boxFoundPaints['values'] = ["Раскраска №" + str(i) for i in range(len(self.typeColorings))]
+        self.boxFoundPaints.current(0)
+
+    def __generateGraph(self):
+        """Генерация графа"""
+        if not self.__checkGameRegime():
+            return
+        self.__clearFrameStepByStep()
+        self.__actionClearCanvas()
+        self.topsPainted = []
+        self.tops, self.typeColorings = GenerateGraph()
+        print(self.typeColorings)
+
+        for top in self.tops.keys():
+            DrawCircle(self.canvas, top, self.numberTop)
+            self.numberTop += 1
+            if self.tops[top] is not None:
+                self.firstTopClick = top
+                for second_top in self.tops[top]:
+                    self.secondTopClick = second_top
+                    self.__drawConnectionTops()
+
+        if self.boxGameRegime.get() != "Демонстрация":
+            self.action = Status.TrainPainted
+        else:
+            self.frameFoundPaints.pack(pady=STANDARD_PADY_FRAMES)
+            self.boxFoundPaints['values'] = ["Раскраска №" + str(i) for i in range(len(self.typeColorings))]
+            self.boxFoundPaints.current(0)
+
+    def __clearFrameStepByStep(self):
+        """Очищает по шаговые подсказки"""
+        ClearFrame(self.frameStepByStep)
+        self.frameStepByStep.pack_forget()
+
+    def __changeColorTop(self, color=TOP_COLOR):
+        """Меняет цвет выбранной вершины"""
+        DrawCircle(self.canvas, self.foundElement, self.foundElement.index, color=color)
+
+    def __initStep(self, number_step):
+        """Создает шаги к раскраске"""
+        text = "Закрасьте вершину №" + str(number_step + 1)
+        self.labelsStepByStep[number_step] = Label(self.frameStepByStep, text=text, font=self.fontStep, padx=POPUP_PADY)
+        self.labelsStepByStep[number_step].pack()
 
     def __countMatches(self, save_position_x, save_position_y):
         """Поиск совпадений по всем точкам"""
@@ -215,13 +372,46 @@ class Paint(Frame):
     def __callbackBoxGameRegime(self, event):
         """Коллбек на комбобокс с гейм режимом"""
         value = self.boxGameRegime.get()
+        self.boxTypeGameRegime['state'] = 'readonly'
         if value == "Демонстрация":
             # иницализация интерфейса демонстрации
-            self.labelDemonstrate.grid(row=1, column=2, padx=STANDARD_PADX, pady=STANDARD_PADY)
-            self.boxDemonstrateRegime.grid(row=1, column=3, padx=STANDARD_PADX, pady=STANDARD_PADY)
-        self.__actionClearCanvas()
+            self.boxTypeGameRegime.pack()
+            self.boxTypeGameRegime['values'] = DEMONSTRATE_REGIME
+            pass
 
-    def __callbackBoxDemonstrateRegime(self, event):
-        """Коллбек на выбор режима демонстрации"""
-        self.buttonPaintTops.grid(row=1, column=4, padx=STANDARD_PADX, pady=STANDARD_PADY)
+        elif value == "Тренажер":
+            # инициализация интерфейса тренажера
+            self.boxTypeGameRegime.pack_forget()
+        elif value == "Задачи":
+            self.boxTypeGameRegime.pack_forget()
+        self.__actionClearCanvas()
+        self.boxTypeGameRegime.set('')
+
+    def __callbackBoxTypeGameRegime(self, event):
+        """Коллбек на выбор режима игры"""
         self.__normalizeTops()
+        if self.boxGameRegime.get() != "Демонстрация":
+            self.frameGenerateGraph.pack()
+
+    def __checkGameRegime(self):
+        """Проверяет выбраны ли режимы рисования"""
+        if self.boxGameRegime.get() == '' or (
+                self.boxGameRegime.get() == "Демонстрация" and self.boxTypeGameRegime.get() == ""):
+            messagebox.showerror("Ошибка", "Выберите параметры отображения")
+            return False
+        return True
+
+    def __callbackBoxFoundPaints(self, event):
+        """Коллбек на выбор раскраски"""
+        self.__normalizeTops()
+        self.__clearFrameStepByStep()
+
+    def __callbackBoxCreateRegime(self, event):
+        self.__actionClearCanvas()
+        self.__clearFrameStepByStep()
+        if self.boxCreateRegime.get() == "Генерация фигуры":
+            self.frameCreateBySelf.pack_forget()
+            self.frameGenerateGraph.pack()
+        elif self.boxCreateRegime.get() == "Построить фигуру":
+            self.frameGenerateGraph.pack_forget()
+            self.frameCreateBySelf.pack()

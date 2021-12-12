@@ -1,12 +1,8 @@
-import StatusesOptions
-
-
 class Top:
-    def __init__(self, name_top, x, y, color=StatusesOptions.TOP_COLOR):
+    def __init__(self, name_top, x, y):
         self.index = name_top
         self.x = x
         self.y = y
-        self.color = color
 
     def __hash__(self):
         return hash(self.index)

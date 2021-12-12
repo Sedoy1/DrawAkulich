@@ -2,9 +2,13 @@ STANDARD_BUTTON_WIDTH = 15
 STANDARD_BUTTON_HEIGHT = 7
 STANDARD_PADX = 10
 STANDARD_PADY = 10
+STANDARD_PADX_FRAMES = 40
+STANDARD_PADY_FRAMES = 25
 
 STANDARD_FAMILY_FONT = "Tahoma"
-STANDARD_SIZE_TEXT = 15
+STANDARD_SIZE = 15
+STEPS_FAMILY_FONT = "Raavi"
+STEPS_FAMILY_SIZE = 12
 
 POPUP_BUTTON_WIDTH = 10
 POPUP_BUTTON_HEIGHT = 5
@@ -28,8 +32,9 @@ LINE_COLOR = "GRAY"
 
 COLOR_DELETE = "WHITE"
 
+GRAPH_CONSTRUCTOR_REGIME = ("Генерация фигуры", "Построить фигуру")
 GAME_REGIME = ("Демонстрация", "Тренажер", "Задачи")
-DEMONSTRATE_REGIME = ("По шагово", "Анимировано", "Мгновенно")
+DEMONSTRATE_REGIME = ("Раскрашу сам", "Анимировано", "Мгновенно")
 
 ANIMATE_PAUSE = 2
 
@@ -39,3 +44,5 @@ class Status:
     AddTop = 1
     ConnectTops = 2
     DeleteTops = 3
+    StepPainted = 4
+    TrainPainted = 5
