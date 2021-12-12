@@ -4,7 +4,7 @@ from PaintClass import Paint
 
 def main():
     root = Tk()
-    root.geometry("1370x950")
+    root.geometry("1470x900")
     app = Paint(root)
     root.mainloop()
 

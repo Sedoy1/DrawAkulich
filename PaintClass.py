@@ -1,18 +1,22 @@
 import math
+import time
 import tkinter.font
 from tkinter import *
+from tkinter.ttk import Combobox
 from tkinter import messagebox
 from StatusesOptions import *
 from Top import Top
-from PopUpTopName import PopUpTopName
+from ComputePoints import *
 
 
-def DrawCircle(canvas, point, color=TOP_COLOR, color_outline=TOP_OUTLINE):
+def DrawCircle(canvas, point, number, color=TOP_COLOR, color_outline=TOP_OUTLINE):
+    number += 1
     canvas.create_oval(point.x - TOP_SIZE,
                        point.y - TOP_SIZE,
                        point.x + TOP_SIZE,
                        point.y + TOP_SIZE,
                        fill=color, outline=color_outline, width=TOP_WIDTH)
+    canvas.create_text(point.x, point.y, text=number)
 
 
 class Paint(Frame):
@@ -20,9 +24,14 @@ class Paint(Frame):
         Frame.__init__(self, parent)
         self.parent = parent
         self.font = tkinter.font.Font(family=STANDARD_FAMILY_FONT, size=STANDARD_SIZE_TEXT)
+        self.frameActions = Frame(self)
+        self.frameOptionsGame = Frame(self)
+        self.frameFoundPaints = Frame(self)
         self.__initText()
+        self.__initBoxes()
         self.__initButtons()
         self.__initCanvas()
+        self.__initBinds()
         self.pack(fill=BOTH, expand=1)
 
         self.numberTop = 0
@@ -35,16 +44,27 @@ class Paint(Frame):
         """Инициализация текста"""
         Label(self, text="Действия", font=self.font).grid(row=0, column=0, padx=STANDARD_PADX, pady=STANDARD_PADY)
 
-        Label(self, text="Цвет № 1", font=self.font).grid(row=1, column=0, padx=STANDARD_PADX, pady=STANDARD_PADY)
+        Label(self, text="Режим игры", font=self.font).grid(row=1, column=0, padx=STANDARD_PADX, pady=STANDARD_PADY)
 
-        Label(self, text="Цвет № 2", font=self.font).grid(row=1, column=2, padx=STANDARD_PADX, pady=STANDARD_PADY)
+        self.labelDemonstrate = Label(self, text="Параметры отображения", font=self.font)
+
+        self.labelFoundedPaints = Label(self, text="Найденные раскраски", font=self.font)
+
+    def __initBoxes(self):
+        """Инициализация боксов с текстом"""
+        self.boxGameRegime = Combobox(self, state='readonly', values=GAME_REGIME, font=self.font)
+        self.boxGameRegime.grid(row=1, column=1, padx=STANDARD_PADX, pady=STANDARD_PADY)
+
+        self.boxDemonstrateRegime = Combobox(self, state='readonly', values=DEMONSTRATE_REGIME, font=self.font)
+
+        self.boxFoundPaints = Combobox(self, state='readonly', font=self.font)
 
     def __initCanvas(self):
         """Инициализирования поля для рисования"""
         self.parent.title("Раскраска графов")
 
         self.canvas = Canvas(self, bg='white', height=CANVAS_HEIGHT, width=CANVAS_WIDTH)
-        self.canvas.grid(row=2, column=1, columnspan=5, sticky=E + W + S + N)
+        self.canvas.grid(row=2, column=0, columnspan=5, sticky=E + W + S + N)
         self.canvas.bind("<Button-1>", self.CanvasClick)
 
     def __initButtons(self):
@@ -57,18 +77,22 @@ class Paint(Frame):
                                         font=self.font, width=STANDARD_BUTTON_WIDTH)
         self.buttonConnectTops.grid(row=0, column=2, padx=STANDARD_PADX, pady=STANDARD_PADY)
 
-        self.buttonPaintTops = Button(self, text="Раскрасить вершины", command=self.__actionPaintTops, font=self.font,
+        self.buttonPaintTops = Button(self, text="Найти раскраски", command=self.__actionFindPaintings, font=self.font,
                                       width=STANDARD_BUTTON_WIDTH)
         self.buttonPaintTops.grid(row=0, column=3, padx=STANDARD_PADX, pady=STANDARD_PADY)
-
-        self.buttonPaintTops = Button(self, text="Удалить вершины", command=self.__actionDeleteTops, font=self.font,
-                                      width=STANDARD_BUTTON_WIDTH)
-        self.buttonPaintTops.grid(row=0, column=4, padx=STANDARD_PADX, pady=STANDARD_PADY)
 
         self.buttonDeleteAll = Button(self, text="Очистить лист", command=self.__actionClearCanvas,
                                       font=self.font,
                                       width=STANDARD_BUTTON_WIDTH)
-        self.buttonDeleteAll.grid(row=0, column=5, padx=STANDARD_PADX, pady=STANDARD_PADY)
+        self.buttonDeleteAll.grid(row=0, column=4, padx=STANDARD_PADX, pady=STANDARD_PADY)
+
+        self.buttonPaintTops = Button(self, text="Раскрасить вершины", command=self.__actionPaintTops, font=self.font,
+                                      width=STANDARD_BUTTON_WIDTH)
+
+    def __initBinds(self):
+        """Устанавливает бинды на виджеты"""
+        self.boxGameRegime.bind("<<ComboboxSelected>>", self.__callbackBoxGameRegime)
+        self.boxDemonstrateRegime.bind("<<ComboboxSelected>>", self.__callbackBoxDemonstrateRegime)
 
     def CanvasClick(self, position):
         """Взаимодействия с полотном"""
@@ -78,14 +102,10 @@ class Paint(Frame):
         if self.action == Status.AddTop:
             self.__countMatches(save_position_x, save_position_y)
             if self.countMatches == len(self.tops.keys()):
-                popup = PopUpTopName(self)
-                self.wait_window(popup.window)
-                name = popup.answer
                 # добавляем новую вершину
                 self.tops[new_top] = []
                 self.numberTop += 1
-                DrawCircle(self.canvas, position)
-                self.canvas.create_text(position.x, position.y, text=name)
+                DrawCircle(self.canvas, new_top, self.numberTop - 1)
             else:
                 tkinter.messagebox.showerror(title="Ошибка", message="Данное место уже занято")
 
@@ -104,48 +124,46 @@ class Paint(Frame):
                 self.secondTopClick = None
                 self.firstTopClick = None
 
-        elif self.action == Status.DeleteTops:
-            self.__findMatch(save_position_x, save_position_y)
-            if self.foundElement is not None:
-                DrawCircle(self.canvas, self.foundElement, color=COLOR_DELETE, color_outline=COLOR_DELETE)
-
-                for element in self.tops[self.foundElement]:  # удаляет все исходящие пути
-                    self.canvas.create_line(self.foundElement.x, self.foundElement.y, element.x, element.y,
-                                            fill=COLOR_DELETE, width=LINE_WIDTH)
-                    DrawCircle(self.canvas, element)
-
-                for top in self.tops.keys():  # удаляет все входящие пути
-                    if self.foundElement in self.tops[top]:
-                        self.tops[top].remove(self.foundElement)
-
-                self.tops.pop(self.foundElement)
-
     # Смена действия
     ################################
     def __actionAddTop(self):
+        self.__normalizeTops()
         self.action = Status.AddTop
 
     def __actionConnectTops(self):
+        self.__normalizeTops()
         self.firstTopClick = None
         self.secondTopClick = None
         self.action = Status.ConnectTops
 
-    def __actionPaintTops(self):
-        for top in self.tops.keys():
-            print(self.tops)
-            print(str(top) + ":", end=" ")
-            for element in self.tops[top]:
-                print(element)
-            print("------------------")
-        # TODO запустить алгоритм от сюда
-        self.action = Status.Nothing
+    def __actionFindPaintings(self):
+        """Нахождения значения раскрасок"""
+        self.typeColorings = process(self.tops)
+        self.labelFoundedPaints.grid(row=0, column=7, padx=STANDARD_PADX, pady=STANDARD_PADY)
+        self.boxFoundPaints.grid(row=1, column=7, padx=STANDARD_PADX, pady=STANDARD_PADY)
+        print(self.typeColorings)
 
-    def __actionDeleteTops(self):
-        self.action = Status.DeleteTops
+        self.boxFoundPaints['values'] = ["Раскраска №" + str(i) for i in range(len(self.typeColorings))]
+        self.boxFoundPaints.current(0)
+
+    def __actionPaintTops(self):
+        """Раскрашиваем вершины"""
+        number_paint = self.boxFoundPaints.current()
+        if self.boxDemonstrateRegime.get() == "Мгновенно" or self.boxDemonstrateRegime.get() == "Анимировано":
+            for number_top, value in enumerate(self.typeColorings[number_paint]):
+                if value == 1:
+                    DrawCircle(self.canvas, list(self.tops.keys())[number_top], number_top, color=TOP_COLOR_PAINT)
+                    if self.boxDemonstrateRegime.get() == "Анимировано":
+                        time.sleep(ANIMATE_PAUSE)
+                        self.update()
+                else:
+                    DrawCircle(self.canvas, list(self.tops.keys())[number_top], number_top, color=TOP_COLOR)
+        self.action = Status.Nothing
 
     def __actionClearCanvas(self):
         self.action = Status.Nothing
         self.tops.clear()
+        self.numberTop = 0
         self.canvas.delete("all")
 
     ##################################
@@ -153,9 +171,9 @@ class Paint(Frame):
     def __makeTopLight(self, status="on"):
         """Выделяет выбранную вершину"""
         if status == "on":
-            DrawCircle(self.canvas, self.firstTopClick, color=TOP_COLOR_CHOICE)
+            DrawCircle(self.canvas, self.firstTopClick, self.firstTopClick.index, color=TOP_COLOR_CHOICE)
         else:
-            DrawCircle(self.canvas, self.firstTopClick)
+            DrawCircle(self.canvas, self.firstTopClick, self.firstTopClick.index)
 
     def __countMatches(self, save_position_x, save_position_y):
         """Поиск совпадений по всем точкам"""
@@ -186,5 +204,24 @@ class Paint(Frame):
         self.canvas.create_line(self.firstTopClick.x, self.firstTopClick.y,
                                 self.secondTopClick.x, self.secondTopClick.y,
                                 fill=LINE_COLOR, width=LINE_WIDTH)
-        DrawCircle(self.canvas, self.firstTopClick)
-        DrawCircle(self.canvas, self.secondTopClick)
+        DrawCircle(self.canvas, self.firstTopClick, self.firstTopClick.index)
+        DrawCircle(self.canvas, self.secondTopClick, self.secondTopClick.index)
+
+    def __normalizeTops(self):
+        """Раскрашивает все вершины в первоначальный цвет"""
+        for top in self.tops.keys():
+            DrawCircle(self.canvas, top, top.index)
+
+    def __callbackBoxGameRegime(self, event):
+        """Коллбек на комбобокс с гейм режимом"""
+        value = self.boxGameRegime.get()
+        if value == "Демонстрация":
+            # иницализация интерфейса демонстрации
+            self.labelDemonstrate.grid(row=1, column=2, padx=STANDARD_PADX, pady=STANDARD_PADY)
+            self.boxDemonstrateRegime.grid(row=1, column=3, padx=STANDARD_PADX, pady=STANDARD_PADY)
+        self.__actionClearCanvas()
+
+    def __callbackBoxDemonstrateRegime(self, event):
+        """Коллбек на выбор режима демонстрации"""
+        self.buttonPaintTops.grid(row=1, column=4, padx=STANDARD_PADX, pady=STANDARD_PADY)
+        self.__normalizeTops()

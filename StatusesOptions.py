@@ -20,12 +20,19 @@ CANVAS_WIDTH = 1200
 TOP_SIZE = 20
 TOP_COLOR = "BLUE"
 TOP_COLOR_CHOICE = "ORANGE"
+TOP_COLOR_PAINT = "RED"
 TOP_OUTLINE = "BLACK"
 TOP_WIDTH = 5
 LINE_WIDTH = 5
 LINE_COLOR = "GRAY"
 
 COLOR_DELETE = "WHITE"
+
+GAME_REGIME = ("Демонстрация", "Тренажер", "Задачи")
+DEMONSTRATE_REGIME = ("По шагово", "Анимировано", "Мгновенно")
+
+ANIMATE_PAUSE = 2
+
 
 class Status:
     Nothing = 0

@@ -1,11 +1,15 @@
+import StatusesOptions
+
+
 class Top:
-    def __init__(self, name_top, x, y):
+    def __init__(self, name_top, x, y, color=StatusesOptions.TOP_COLOR):
         self.index = name_top
         self.x = x
         self.y = y
+        self.color = color
 
     def __hash__(self):
-        return hash((self.x, self.y))
+        return hash(self.index)
 
     def __eq__(self, other):
         return (self.x, self.y) == (other.x, other.y)
