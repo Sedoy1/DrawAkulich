@@ -1,4 +1,4 @@
-STANDARD_BUTTON_WIDTH = 15
+STANDARD_BUTTON_WIDTH = 20
 STANDARD_BUTTON_HEIGHT = 7
 STANDARD_PADX = 10
 STANDARD_PADY = 10
@@ -32,7 +32,7 @@ LINE_COLOR = "GRAY"
 
 COLOR_DELETE = "WHITE"
 
-GRAPH_CONSTRUCTOR_REGIME = ("Генерация фигуры", "Построить фигуру")
+GRAPH_CONSTRUCTOR_REGIME = ("Генерация фигуры", "Построение фигуры")
 GAME_REGIME = ("Демонстрация", "Тренажер", "Задачи")
 DEMONSTRATE_REGIME = ("Раскрашу сам", "Анимировано", "Мгновенно")
 
@@ -45,4 +45,5 @@ class Status:
     ConnectTops = 2
     DeleteTops = 3
     StepPainted = 4
-    TrainPainted = 5
+    TrainingRegime = 5
+    SolvingRegime = 6
