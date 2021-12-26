@@ -10,14 +10,8 @@ import copy
 from ComputePoints import *
 
 
-# todo откат действия назад
-
 
 def GenerateGraph():
-    # todo генерировать фигуру здесь
-    # return {Top(0, 100, 100): [Top(1, 150, 150), Top(2, 200, 150), Top(3, 500, 500)], Top(1, 150, 150): None,
-    #         Top(2, 200, 150): None,
-    #         Top(3, 500, 500): None}, [[1, 0, 1, 1], [1, 0, 0, 1]]
     return generate_random_graph()
 
 
@@ -484,6 +478,6 @@ class Paint(Frame):
         if self.boxCreateRegime.get() == "Генерация фигуры":
             self.frameCreateBySelf.pack_forget()
             self.frameGenerateGraph.pack()
-        elif self.boxCreateRegime.get() == "Построить фигуру":
+        elif self.boxCreateRegime.get() == "Построение фигуры":
             self.frameGenerateGraph.pack_forget()
             self.frameCreateBySelf.pack()
