@@ -10,7 +10,6 @@ import copy
 from ComputePoints import *
 
 
-
 def GenerateGraph():
     return generate_random_graph()
 
@@ -124,11 +123,13 @@ class Paint(Frame):
         Button(self.frameGenerateGraph, text="Сгенерировать фигуру", command=self.__generateGraph,
                font=self.font).pack()
 
-        Button(self.frameSolveColorings, text="Проверить решение", command=self.__checkSolution, font=self.font).pack(pady=STANDARD_PADY)
+        Button(self.frameSolveColorings, text="Проверить решение", command=self.__checkSolution, font=self.font).pack(
+            pady=STANDARD_PADY)
 
-        #Button(self.frameSolveColorings, text="Получить решение", command=self.__getSolution, font=self.font).pack(pady=STANDARD_PADY)
+        # Button(self.frameSolveColorings, text="Получить решение", command=self.__getSolution, font=self.font).pack(pady=STANDARD_PADY)
 
-        self.buttonReverse = Button(self.frameRight, text="Отмена действия", command=self.__revertAction, font=self.font)
+        self.buttonReverse = Button(self.frameRight, text="Отмена действия", command=self.__revertAction,
+                                    font=self.font)
 
     def __initBinds(self):
         """Устанавливает бинды на виджеты"""
@@ -187,7 +188,8 @@ class Paint(Frame):
                 return
             if self.currentIndexColoring is None:
                 self.__findCorrectColoring()
-            if (self.foundElement.index in self.tops2PaintIndex and self.foundElement.index not in self.topsPainted) or self.action == Status.SolvingRegime:
+            if (
+                    self.foundElement.index in self.tops2PaintIndex and self.foundElement.index not in self.topsPainted) or self.action == Status.SolvingRegime:
                 self.__saveUserAction()
                 self.__changeColorTop(TOP_COLOR_PAINT)
                 self.topsPainted.append(self.foundElement.index)
@@ -201,7 +203,8 @@ class Paint(Frame):
                     if tops2coloring == self.topsPainted:
                         self.__coloringFinished()
                         return
-            if len(self.topsPainted) == len(self.tops2PaintIndex) and len(self.topsPainted) > 0 and self.action != Status.SolvingRegime:
+            if len(self.topsPainted) == len(self.tops2PaintIndex) and len(
+                    self.topsPainted) > 0 and self.action != Status.SolvingRegime:
                 self.__coloringFinished()
 
     # Смена действия
@@ -391,7 +394,7 @@ class Paint(Frame):
             return
         for top in self.topsPainted:
             if top not in self.tops2PaintIndex:
-                messagebox.showerror("Ошибка", " Вершина номер {} не должна быть закрашенна".format(str(top+1)))
+                messagebox.showerror("Ошибка", " Вершина номер {} не должна быть закрашенна".format(str(top + 1)))
                 return
         self.__coloringFinished()
 
@@ -414,7 +417,7 @@ class Paint(Frame):
 
     def __saveUserAction(self, number_label=None):
         """Сохраняет все последние действия пользователя в словарь и записывает его"""
-        user_action = {"topsPainted": None, "numberLabel": None, "Top": None, "typeColorings":None}
+        user_action = {"topsPainted": None, "numberLabel": None, "Top": None, "typeColorings": None}
         user_action["topsPainted"] = list(self.topsPainted)
         user_action['top'] = copy.copy(self.foundElement)
         user_action['numberLabel'] = number_label
@@ -481,3 +484,5 @@ class Paint(Frame):
         elif self.boxCreateRegime.get() == "Построение фигуры":
             self.frameGenerateGraph.pack_forget()
             self.frameCreateBySelf.pack()
+        elif self.boxCreateRegime.get() == "Задача Леонардо":
+            pass

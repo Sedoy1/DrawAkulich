@@ -14,7 +14,6 @@ def create_matrix(N, K):
         for j in range(N):
             if i < j and edges <= K * N:
                 matrix[i][j] = random.randint(0, 1)
-
                 edges += matrix[i][j]
             elif i > j:
                 matrix[i][j] = matrix[j][i]
@@ -47,7 +46,6 @@ def generate_random_graph() -> dict:
                     matrix[i].append(0)
 
     pos = [[random.randint(100, 1200), random.randint(100, 790)] for _ in range(N)]
-    # todo : create list of full random but not same coordinates [[x,y],[x,y]....]
 
     G = dict()
     tops = list()
