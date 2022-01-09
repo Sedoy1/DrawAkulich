@@ -11,12 +11,11 @@ try:
         N = int(line)
     file.close()
 except:
-     N = 4
-
+    N = 4
 
 pygame.init()
 
-size_block = 500//N
+size_block = 500 // N
 margin = 15
 width = height = size_block * N + margin * (N + 1)
 
@@ -28,7 +27,7 @@ black = (0, 0, 0)
 red = (255, 0, 0)
 white = (255, 255, 255)
 
-font_button = pygame.font.SysFont("stxingkai", size_block//3)
+font_button = pygame.font.SysFont("stxingkai", width // 12)
 text_button = font_button.render("Показать все раскраски", True, red)
 text_rect = text_button.get_rect()
 button_text_x = screen.get_width() / 2 - text_rect.width / 2
@@ -36,6 +35,7 @@ button_text_y = screen.get_height() - 45
 solutions = []
 arr = [[0] * N for i in range(N)]
 clock = pygame.time.Clock()
+
 
 def solve():
     n = N ** 2
@@ -57,7 +57,7 @@ def solve():
     b2 = galois.GF2(b_res)
     solutions = []
     if N > 4:
-        solutions.append(np.linalg.solve(a2,b2))
+        solutions.append(np.linalg.solve(a2, b2))
         return solutions
 
     for numbers in itertools.product([0, 1], repeat=len(b_res)):
@@ -88,6 +88,7 @@ def output_example_array(array):
             pygame.draw.rect(screen, color, (x, y, size_block, size_block))
     time.sleep(2)
 
+
 def slider(solutions):
     for i in range(len(solutions)):
         screen.fill(black)
@@ -99,7 +100,6 @@ def slider(solutions):
         surface_text_y = screen.get_height() - 45
         screen.blit(text_surface, [surface_text_x, surface_text_y])
         pygame.display.update()
-
 
 
 game_over = False
