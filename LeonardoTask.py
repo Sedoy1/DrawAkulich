@@ -3,6 +3,7 @@ import galois
 import pygame
 import sys
 import itertools
+import numpy as np
 
 try:
     with open("settings.txt", "r") as file:
@@ -14,7 +15,8 @@ except:
 
 
 pygame.init()
-size_block = 100
+
+size_block = 500//N
 margin = 15
 width = height = size_block * N + margin * (N + 1)
 
@@ -54,6 +56,10 @@ def solve():
     a2 = galois.GF2(arr)
     b2 = galois.GF2(b_res)
     solutions = []
+    if N > 4:
+        solutions.append(np.linalg.solve(a2,b2))
+        return solutions
+
     for numbers in itertools.product([0, 1], repeat=len(b_res)):
         tmp = galois.GF2(numbers)
         tmp2 = a2 @ tmp
